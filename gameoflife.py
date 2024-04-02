@@ -19,18 +19,24 @@ def main():
     CELL_SIZE = 20
     camera_x = 0
     camera_y = 0
+    mouse_drag = False
+    screen_rect = SCREEN.get_rect()
+    surf_rect = GAME_SURF.get_rect() 
     
     grid = createGrid(CELL_SIZE)
 
     while RUNNING:
         SCREEN.fill(BACKGROUND)
         GAME_SURF.fill(BACKGROUND)
-        screen_rect = SCREEN.get_rect()
-        surf_rect = GAME_SURF.get_rect() 
+
         for row in grid:
             for cell in row:
                 cell.draw()
-        pygame.draw.rect(GAME_SURF, GRID_COLOR, (0, 0, GAME_WIDTH, GAME_HEIGHT), 2) # draw a border around the entire game grid
+        
+        # styling
+        pygame.draw.rect(GAME_SURF, GRID_COLOR, (0, 0, GAME_WIDTH, GAME_HEIGHT), 2)
+        surf_rect.center = screen_rect.center
+
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
             camera_x += 5
@@ -40,8 +46,7 @@ def main():
             camera_y -= 5
         elif keys[pygame.K_UP]:
             camera_y += 5
-        
-        surf_rect.center = screen_rect.center # set the area of the game surface to the centre of the main screen surface
+
         surf_rect.x += camera_x
         surf_rect.y += camera_y
         SCREEN.blit(GAME_SURF, surf_rect)
@@ -49,10 +54,30 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 RUNNING = False
+
             elif event.type == pygame.VIDEORESIZE:
                 SCREEN = pygame.display.set_mode(event.size, pygame.RESIZABLE, vsync=1)
                 pygame.transform.scale(GAME_SURF, event.size)
-                
+            
+            # camera controls
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1 or event.button == 2:
+                    mouse_drag = True
+                    mouse_start_x, mouse_start_y = event.pos
+                    camera_start_x, camera_start_y = camera_x, camera_y
+
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1 or event.button == 2:
+                    mouse_drag = False
+
+            elif event.type == pygame.MOUSEMOTION:
+                if mouse_drag:
+                    curr_x, curr_y = event.pos
+                    x_offset = curr_x - mouse_start_x
+                    y_offset = curr_y - mouse_start_y
+                    camera_x = x_offset + camera_start_x
+                    camera_y = y_offset + camera_start_y
+                    
         pygame.display.flip()
         CLOCK.tick(60)
 
