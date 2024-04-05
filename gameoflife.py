@@ -14,6 +14,7 @@ LIVE_CELL = (183, 189, 248)
 def main():
     global SCREEN, CLOCK, RUNNING, GAME_SURFACE, camera_x, camera_y
     pygame.init()
+    pygame.display.set_caption("PyGame of Life")
     SCREEN = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.RESIZABLE, vsync=1)
     GAME_SURFACE = pygame.Surface((GAME_WIDTH, GAME_HEIGHT))
     CLOCK = pygame.time.Clock()
@@ -39,16 +40,6 @@ def main():
         # styling
         pygame.draw.rect(GAME_SURFACE, GRID_COLOR, (0, 0, GAME_WIDTH, GAME_HEIGHT), 2)
         surface_rect.center = screen_rect.center
-
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]:
-            camera_x += 5
-        elif keys[pygame.K_RIGHT]:
-            camera_x -= 5
-        elif keys[pygame.K_DOWN]:
-            camera_y -= 5
-        elif keys[pygame.K_UP]:
-            camera_y += 5
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
