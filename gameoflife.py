@@ -1,8 +1,8 @@
 import pygame
 import numpy as np
 
-GAME_WIDTH = 3840
-GAME_HEIGHT = 2160
+GAME_WIDTH = 2560
+GAME_HEIGHT = 1440
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
 # colour scheme credit to catppuccin @ catppuccin.com
@@ -10,6 +10,7 @@ BASE = (36, 39, 58)
 GRID_COLOR = (73, 77, 100)
 HIGHLIGHT = (110, 115, 141)
 LIVE_CELL = (183, 189, 248)
+TEXT = (202, 211, 245)
 
 def main():
     global SCREEN, CLOCK, RUNNING, GAME_SURFACE, CELL_SIZE, state, camera_x, camera_y
@@ -21,13 +22,21 @@ def main():
     RUNNING = True
     CELL_SIZE = 20
     GAMEUPDATE = pygame.USEREVENT + 1
-    pygame.time.set_timer(GAMEUPDATE, 100)
-    simulating = False
+    pygame.time.set_timer(GAMEUPDATE, 100) # game tick timer
+    paused = True
     camera_x = 0
     camera_y = 0
     mouse_drag = False
+
     screen_rect = SCREEN.get_rect()
     surface_rect = GAME_SURFACE.get_rect() 
+
+    # ui elements
+    font = pygame.freetype.Font(None, 18)
+    controls = font.render("Pan: LMB | Place: RMB | Pause: Space", TEXT)
+    paused_text = font.render("PAUSED", TEXT, size = 24)
+    controls[1].midbottom = (screen_rect.centerx, screen_rect.bottom - (screen_rect.bottom / 25))
+    paused_text[1].midtop = (screen_rect.centerx, 25)
     
     grid = create_grid(CELL_SIZE)
     state = np.zeros(shape=(GAME_WIDTH // CELL_SIZE, GAME_HEIGHT // CELL_SIZE))
@@ -52,8 +61,11 @@ def main():
                 RUNNING = False
 
             if event.type == pygame.VIDEORESIZE:
-                SCREEN = pygame.display.set_mode(event.size, pygame.RESIZABLE, vsync=1)
                 pygame.transform.scale(GAME_SURFACE, event.size)
+                pygame.transform.scale(controls[0], event.size)
+                resized = SCREEN.get_rect()
+                controls[1].midbottom = (resized.centerx, resized.bottom - (resized.bottom / 25))
+                paused_text[1].midtop = (resized.centerx, 25)
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
@@ -76,22 +88,26 @@ def main():
                     y_offset = curr_y - mouse_start_y
                     camera_x = x_offset + camera_start_x
                     camera_y = y_offset + camera_start_y
-                    camera_x = max(-WINDOW_WIDTH + (SCREEN.get_size()[0] - WINDOW_WIDTH + CELL_SIZE), 
+                    # camera clamping to prevent panning off of the grid
+                    camera_x = max((SCREEN.get_size()[0] - ((GAME_WIDTH + WINDOW_WIDTH) / 2) + CELL_SIZE), 
                                    min(camera_x, (GAME_WIDTH - WINDOW_WIDTH) / 2) - CELL_SIZE)
-                    camera_y = max(-WINDOW_HEIGHT + (SCREEN.get_size()[1] - WINDOW_HEIGHT + CELL_SIZE), 
+                    camera_y = max((SCREEN.get_size()[1] - ((GAME_HEIGHT + WINDOW_HEIGHT) / 2) + CELL_SIZE), 
                                    min(camera_y, (GAME_HEIGHT - WINDOW_HEIGHT) / 2) - CELL_SIZE)
             
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RETURN:
-                    simulating = not simulating
+                if event.key == pygame.K_SPACE:
+                    paused = not paused
 
             if event.type == GAMEUPDATE:
-                if simulating:
+                if not paused:
                     state = calculate_gen()
 
         surface_rect.x += camera_x
         surface_rect.y += camera_y
         SCREEN.blit(GAME_SURFACE, surface_rect)
+        SCREEN.blit(controls[0], controls[1])
+        if paused:
+            SCREEN.blit(paused_text[0], paused_text[1])
                     
         pygame.display.flip()
         CLOCK.tick(144)
@@ -128,6 +144,7 @@ class Cell:
         if event.type == pygame.MOUSEBUTTONUP:
             if self.hovered:
                 state[self.coords[0]][self.coords[1]] = 1 - state[self.coords[0]][self.coords[1]]
+                print(self.coords)
                 
 
 def create_grid(size):
