@@ -144,7 +144,6 @@ class Cell:
         if event.type == pygame.MOUSEBUTTONUP:
             if self.hovered:
                 state[self.coords[0]][self.coords[1]] = 1 - state[self.coords[0]][self.coords[1]]
-                print(self.coords)
                 
 
 def create_grid(size):
